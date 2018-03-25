@@ -11,6 +11,8 @@ from GoogleSpeechStream import *
 import pygubu
 import imageio
 from PIL import Image, ImageTk
+import imutils as imu
+
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
@@ -40,33 +42,21 @@ class GuiApp(object):
         # and add the image holder  as the top (first) component of tb split pane
         self.topBottomSplitPane.add(imagebox)
 
-        # 2. add a textbox as the bottom (second) component of the above tb split pane
-        self.text_bottomPlaceHolder = tk.Label(self.topBottomSplitPane, text="BOTTOM")
-        self.topBottomSplitPane.add(self.text_bottomPlaceHolder)
+        # 2. add a textbox as the bottom (second) component of the above tb split pa
+        self.startButton = tk.Button ( master, bg="green", fg="black", text="START")
+        self.stopButton = tk.Button (master, bg = "red", fg = "black", text = "STOP")
+        self.screenShot = tk.Button (master, bg = "blue", fg = "white", text = "SCREENSHOT")
+        self.topBottomSplitPane.add(self.startButton)
+        self.topBottomSplitPane.add(self.stopButton)
+        self.topBottomSplitPane.add(self.screenShot)
 
-        # 3. add a text box in the created split pane
+        # 4. add a text box in the created split pane
         self.text_wid = tk.Text(self.leftRightSplitPane)
         self.leftRightSplitPane.add(self.text_wid)
 
         self.root.after(100, self.CheckQueuePoll, q)
 
         self.root.mainloop()
-        # video_name = "PlaceHolderImage.jpg" #This will be our video file path, in this case live from the webcam
-        # video = imageio.get_reader(video_name)
-
-        # def stream(label):
-        #     for image in video.iter_data():
-        #         frame_image = ImageTk.PhotoImage(Image.fromarray(image))
-        #         imagebox.config(image=frame_image)
-        #         imagebox.image = frame_image
-        # if __name__ == "__main__":
-        #     root = Tk.Tk()
-        #     my_label = Tk.Label(root)
-        #     my_label.pack()
-        #     thread = threading.Thread(target=stream, args=(my_label,))
-        #     thread.daemon = 1
-        #     thread.start()
-        #     root.mainloop()
 
     def CheckQueuePoll(self, c_queue):
         try:
