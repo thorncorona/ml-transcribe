@@ -44,7 +44,7 @@ class TranscriptionApp:
         # I'm not a GUI developer, nor do I even pretend to be. This
         # try/except statement is a pretty ugly hack to get around
         # a RunTime error that Tkinter throws due to threading
-        try:K
+        try:
             # keep looping over frames until we are instructed to stop
             while not self.stopEvent.is_set():
                 # grab the frame from the video stream and resize it to
