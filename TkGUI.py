@@ -10,6 +10,7 @@ from queue import *
 
 from GoogleSpeechStream import *
 from ImageProcessor import *
+from NotesToPdf import convertNotesToPdf
 
 # Audio recording parameters
 RATE = 16000
@@ -90,12 +91,13 @@ class GuiApp(object):
         finally:
             self.root.after(100, self.check_image_queue_poll, imageQueue)
 
-    def file_save():
+    def file_save(self):
         f = tk.filedialog.asksaveasfile(mode='w', defaultextension=".pdf")
         if f is None:  # asksaveasfile return `None` if dialog closed with "cancel".
             return
         else:
-            name = f.name
+            fname = f.name
+            pdf = convertNotesToPdf(self.savedNotes, fname)
             f.close()
 
 
