@@ -31,7 +31,7 @@ class GuiApp(object):
                 stream_img = Image.fromarray(stream_img)
                 stream_img = ImageTk.PhotoImage(stream_img)
 
-                self.canvas.create_image(0, 0, image=stream_img, anchor=Tk.NW)
+                self.canvas.create_image(0, 0, image=stream_img)
                 # self.canvas.create_rectangle(50, 0, 100, 50, fill='red')
                 # print('Canvas', self.canvas.winfo_width(), self.canvas.winfo_height())
 
@@ -45,9 +45,10 @@ def processImages(imageQueue):
     img_proc = ImageProcessor(FPS=30, rolling_avg=15)
 
     while True:
-        img_proc.capture_next_frame()
-        imageQueue.put((img_proc.get_warped_image(),
-                        img_proc.get_contoured_image()))
+        if imageQueue.empty():
+            img_proc.capture_next_frame()
+            imageQueue.put((img_proc.get_warped_image(),
+                            img_proc.get_contoured_image()))
 
 
 if __name__ == '__main__':
