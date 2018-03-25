@@ -105,6 +105,8 @@ class ImageProcessor(object):
             cv2.drawContours(contoured_img, [raw_screen_contours], -1, (0, 0, 255), 2)
 
             warped = transform.four_point_transform(image, averaged_screen_contours.reshape(4, 2))
+            # cv2.imshow("contour", contoured_img)
+            # print(averaged_screen_contours.reshape(4,2))
             return warped, contoured_img
         else:
             return None
