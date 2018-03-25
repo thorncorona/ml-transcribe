@@ -19,17 +19,22 @@ CHUNK = int(RATE / 10)  # 100ms
 
 
 class GuiApp(object):
-    def __init__(self, textQueue, imageQueue):
+    def __init__(self, textQueue, imageQueue, imSetQueue):
         self.root = tk.Tk()
-        self.root.bind('<space>', self.bindToSaveSlide)
+        self.root.bind('<F1>', self.bindToSaveSlide)
+        self.root.bind('<F2>', self.bindToLockSlide)
+        self.root.bind('<F3>', self.bindToLockFrame)
 
         self.slide = None
         self.notes = ""
         self.savedNotes = []
         self.STARTED = False
+        self.lockSlide = False
+        self.lockFrame = False
+        self.imSetQueue = imSetQueue
 
-        #First we set the title of the entire frame
-        self.root.title("AutoDoc")
+        # First we set the title of the entire frame
+        self.root.title("AutoDoc - (F1) Save notes, (F2) Lock Slide Image, (F3), Lock view")
 
         #### first create GUI component holders : PaneWindow
 
@@ -54,7 +59,7 @@ class GuiApp(object):
         # 2. add a textbox as the bottom (second) component of the above tb split pa
         self.startButton = tk.Button(self.root, bg="green", fg="black", text="START", command=self.startRecord)
         self.stopButton = tk.Button(self.root, bg="red", fg="black", text="STOP", command=self.stopRecord)
-        self.screenShot = tk.Button(self.root, bg="blue", fg="white", text="SCREENSHOT", command=self.saveSlide)
+        self.screenShot = tk.Button(self.root, bg="blue", fg="white", text="SCREENSHOT (F1)", command=self.saveSlide)
         self.saveAsPDF = tk.Button(self.root, bg="#ff3330", fg="white", text="Save as PDF", command=self.savePDF)
         self.topBottomSplitPane.add(self.startButton)
         self.topBottomSplitPane.add(self.stopButton)
@@ -87,12 +92,12 @@ class GuiApp(object):
             if queue_item is not None:
                 warped_image, contoured_image = queue_item
 
-                if warped_image is None:
+                if warped_image is None or self.imagebox.winfo_height() < 50:
                     return
 
                 stream_img = imutils.resize(warped_image, height=self.imagebox.winfo_height())
                 stream_img = Image.fromarray(stream_img)
-                self.slide = stream_img
+                self.slide_raw = stream_img
 
                 stream_img = ImageTk.PhotoImage(stream_img)
 
@@ -116,11 +121,31 @@ class GuiApp(object):
         self.saveSlide()
 
     def saveSlide(self):
-        self.savedNotes.append((self.slide, self.text_wid.get("1.0",tk.END)))
+
+        if self.slide is None:
+            self.slide = self.slide_raw
+
+        self.savedNotes.append((self.slide, self.text_wid.get("1.0", tk.END)))
         self.text_wid.delete(1.0, tk.END)
         self.slide = None
         self.notes = ""
         print("Saved")
+
+    def bindToLockSlide(self, event):
+        self.lockSlideToggle()
+
+    def lockSlideToggle(self):
+        self.lockSlide = True
+        self.slide = self.slide_raw
+        print("lock slide: ", self.lockSlide)
+
+    def bindToLockFrame(self, event):
+        self.lockFrameToggle()
+
+    def lockFrameToggle(self):
+        self.lockFrame = not self.lockFrame
+        self.imSetQueue.put(self.lockFrame)
+        print("Lock Frame: ", self.lockFrame)
 
     def startRecord(self):
         print("Started recording")
@@ -212,12 +237,16 @@ def listen(speechQueue):
             pass
 
 
-def processImages(imageQueue):
+def processImages(imageQueue, imSetQueue):
     img_proc = ImageProcessor(FPS=30, rolling_avg=15)
-
+    lockFrame = False
     while True:
+
+        if imSetQueue.empty() is False:
+            lockFrame = imSetQueue.get(0)
+
         if imageQueue.empty():
-            img_proc.capture_next_frame()
+            img_proc.capture_next_frame(lockFrame)
             imageQueue.put((img_proc.get_warped_image(),
                             img_proc.get_contoured_image()))
 
@@ -226,13 +255,15 @@ def main():
     # Queue which will be used for storing Data
     imageQueue = multiprocessing.Queue()
     imageQueue.cancel_join_thread()  # or else thread that puts data will not term
+    imSetQueue = multiprocessing.Queue()
+    imSetQueue.cancel_join_thread()  # or else thread that puts data will not term
 
     speechQueue = multiprocessing.Queue()
     speechQueue.cancel_join_thread()  # or else thread that puts data will not term
 
-    gui = GuiApp(speechQueue, imageQueue)
+    gui = GuiApp(speechQueue, imageQueue, imSetQueue)
 
-    videoThread = multiprocessing.Process(target=processImages, args=(imageQueue,))
+    videoThread = multiprocessing.Process(target=processImages, args=(imageQueue, imSetQueue))
     transcribeThread = multiprocessing.Process(target=listen, args=(speechQueue,))
 
     videoThread.start()
