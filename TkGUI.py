@@ -1,26 +1,30 @@
 import tkinter as tk
+import imageio
+from PIL import Image, ImageTk
+
 import multiprocessing
 from queue import *
 import time
+
 import pyaudio
 from array import array
 from google.cloud import speech
 from google.cloud.speech import enums
 from google.cloud.speech import types
+
 from GoogleSpeechStream import *
-import pygubu
-import imageio
-from PIL import Image, ImageTk
+from ImageProcessor import *
+
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
 
 
 class GuiApp(object):
-    def __init__(self, q, master=None):
+    def __init__(self, textQueue, imageQueue, master=None):
         self.root = master
 
-        #self.root.resizable(width = False, height = False)
+        # self.root.resizable(width = False, height = False)
 
         #### first create GUI component holders : PaneWindow
         # 1. create a left right split pane
@@ -48,36 +52,43 @@ class GuiApp(object):
         self.text_wid = tk.Text(self.leftRightSplitPane)
         self.leftRightSplitPane.add(self.text_wid)
 
-        self.root.after(100, self.CheckQueuePoll, q)
+        self.root.after(100, self.checkSpeechQueuePoll, textQueue)
+        self.root.after(50, self.checkImageQueuePoll, imageQueue)
 
         self.root.mainloop()
-        # video_name = "PlaceHolderImage.jpg" #This will be our video file path, in this case live from the webcam
-        # video = imageio.get_reader(video_name)
 
-        # def stream(label):
-        #     for image in video.iter_data():
-        #         frame_image = ImageTk.PhotoImage(Image.fromarray(image))
-        #         imagebox.config(image=frame_image)
-        #         imagebox.image = frame_image
-        # if __name__ == "__main__":
-        #     root = Tk.Tk()
-        #     my_label = Tk.Label(root)
-        #     my_label.pack()
-        #     thread = threading.Thread(target=stream, args=(my_label,))
-        #     thread.daemon = 1
-        #     thread.start()
-        #     root.mainloop()
-
-    def CheckQueuePoll(self, c_queue):
+    def checkSpeechQueuePoll(self, c_queue):
         try:
-            imagequeue = c_queue.get(0)
-            queueitem = c_queue.get(0)
-            self.text_wid.insert('end', queueitem)
+            queue_item = c_queue.get(0)
+            self.text_wid.insert('end', queue_item)
         except Empty:
             pass
         finally:
-            self.root.after(100, self.CheckQueuePoll, c_queue)
+            self.root.after(100, self.checkSpeechQueuePoll, c_queue)
 
+    def checkImageQueuePoll(self, c_queue):
+        try:
+            queue_item = c_queue.get(0)
+
+            if queue_item is not None:
+                warped_image, contoured_image = queue_item
+
+                if warped_image is None:
+                    return
+
+                self.slide = warped_image
+                stream_img = warped_image
+
+                stream_img = imutils.resize(warped_image, height=768)
+                stream_img = Image.fromarray(stream_img)
+                stream_img = ImageTk.PhotoImage(stream_img)
+
+                self.imageLabel.configure(image=stream_img)
+                self.imageLabel.image = stream_img # need to prevent garbage collecting
+        except Empty:
+            pass
+        finally:
+            self.root.after(100, self.checkImageQueuePoll, c_queue)
 
 def listen_print_loop(responses, q):
     """Iterates through server responses and prints them.
@@ -138,44 +149,56 @@ def streamAudio(client, config, streaming_config, q):
         # Now, put the transcription responses to use.
         listen_print_loop(responses, q)
 
-def getVideoImage():...
 
 def listen(q):
-    language_code = 'en-US'  # a BCP-47 language tag
+    pass
+    # language_code = 'en-US'  # a BCP-47 language tag
 
-    #client = speech.SpeechClient()
-    config = types.RecognitionConfig(
-        encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=RATE,
-        language_code=language_code)
-    streaming_config = types.StreamingRecognitionConfig(
-        config=config,
-        interim_results=True)
+    # client = speech.SpeechClient()
+    # config = types.RecognitionConfig(
+    #     encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
+    #     sample_rate_hertz=RATE,
+    #     language_code=language_code)
+    # streaming_config = types.StreamingRecognitionConfig(
+    #     config=config,
+    #     interim_results=True)
+    #
+    # while True:
+    #     try:
+    #         print("restarting")
+    #         streamAudio(client, config, streaming_config, q)
+    #     except:
+    #         print("error occured ")
+    #         pass
+
+
+def processImages(self, imageQueue):
+    img_proc = ImageProcessor(FPS=30, rolling_avg=15)
 
     while True:
-        try:
-            print("restarting")
-            streamAudio(client, config, streaming_config, q)
-        except:
-            print("error occured ")
-            pass
+        if imageQueue.empty():
+            img_proc.capture_next_frame()
+            imageQueue.put((img_proc.get_warped_image(),
+                            img_proc.get_contoured_image()))
+
 
 if __name__ == '__main__':
     # Queue which will be used for storing Data
 
-    q = multiprocessing.Queue()
-    q2 = multiprocessing.Queue()
-    q.cancel_join_thread()  # or else thread that puts data will not term
-    q2.cancel_join_thread()  # or else thread that puts data will not term
+    imageQueue = multiprocessing.Queue()
+    textQueue = multiprocessing.Queue()
+
+    imageQueue.cancel_join_thread()  # or else thread that puts data will not term
+    textQueue.cancel_join_thread()  # or else thread that puts data will not term
 
     root = tk.Tk()
-    gui = GuiApp(q2, master=root)
-    # t1 = multiprocessing.Process(target=GenerateData, args=(q,))
+    gui = GuiApp(textQueue, imageQueue, master=root)
+    t1 = multiprocessing.Process(target=processImages, args=(imageQueue,))
     # t2 = multiprocessing.Process(target=listen, args=(q2,))
-    # # t1.start()
+    t1.start()
     # t2.start()
 
     # root.mainloop()
 
-    # t1.join()
-    #t2.join()
+    t1.terminate()
+    # t2.join()

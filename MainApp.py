@@ -10,10 +10,15 @@ import imutils
 class GuiApp(object):
     def __init__(self, imageQueue):
         self.root = Tk.Tk()
-        self.root.geometry('1366x768')
+        self.root.bind('<space>', self.bindToSaveSlide)
+
         self.imageLabel = Tk.Label(image=None)
         self.imageLabel.pack(padx=10, pady=10)
         self.root.after(50, self.CheckQueuePoll, imageQueue)
+
+        self.slide = None
+        self.notes = ""
+        self.savedNotes = []
 
     def CheckQueuePoll(self, c_queue):
         try:
@@ -25,7 +30,9 @@ class GuiApp(object):
                 if warped_image is None:
                     return
 
+                self.slide = warped_image
                 stream_img = warped_image
+
                 stream_img = imutils.resize(warped_image, height=768)
                 stream_img = Image.fromarray(stream_img)
                 stream_img = ImageTk.PhotoImage(stream_img)
@@ -37,6 +44,9 @@ class GuiApp(object):
         finally:
             self.root.after(100, self.CheckQueuePoll, c_queue)
 
+    def bindToSaveSlide(self, event):
+        self.savedNotes.append((self.slide, self.notes))
+        print("Saved")
 
 def processImages(imageQueue):
     img_proc = ImageProcessor(FPS=30, rolling_avg=15)
@@ -46,7 +56,6 @@ def processImages(imageQueue):
             img_proc.capture_next_frame()
             imageQueue.put((img_proc.get_warped_image(),
                             img_proc.get_contoured_image()))
-
 
 
 if __name__ == '__main__':
