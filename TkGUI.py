@@ -1,11 +1,15 @@
 import tkinter as tk
+from tkinter import filedialog as fdialog
+
 from PIL import Image, ImageTk
+import imutils
 
 import multiprocessing
 from queue import *
 
 from GoogleSpeechStream import *
 from ImageProcessor import *
+from NotesToPdf import convertNotesToPdf
 import imutils
 import time
 
@@ -51,9 +55,11 @@ class GuiApp(object):
         self.startButton = tk.Button(self.root, bg="green", fg="black", text="START", command=self.startRecord)
         self.stopButton = tk.Button(self.root, bg="red", fg="black", text="STOP", command=self.stopRecord)
         self.screenShot = tk.Button(self.root, bg="blue", fg="white", text="SCREENSHOT", command=self.saveSlide)
+        self.saveAsPDF = tk.Button(self.root, bg="#ff3330", fg="white", text="Save as PDF", command=self.savePDF)
         self.topBottomSplitPane.add(self.startButton)
         self.topBottomSplitPane.add(self.stopButton)
         self.topBottomSplitPane.add(self.screenShot)
+        self.topBottomSplitPane.add(self.saveAsPDF)
 
         # 4. add a text box in the created split pane
         self.text_wid = tk.Text(self.leftRightSplitPane)
@@ -84,10 +90,10 @@ class GuiApp(object):
                 if warped_image is None:
                     return
 
-                self.slide = warped_image
-
                 stream_img = imutils.resize(warped_image, height=self.imagebox.winfo_height())
                 stream_img = Image.fromarray(stream_img)
+                self.slide = stream_img
+
                 stream_img = ImageTk.PhotoImage(stream_img)
 
                 self.imagebox.configure(image=stream_img)
@@ -97,12 +103,23 @@ class GuiApp(object):
         finally:
             self.root.after(100, self.check_image_queue_poll, imageQueue)
 
+    def savePDF(self):
+        f = fdialog.asksaveasfile(mode='w', defaultextension=".pdf")
+        if f is None:  # asksaveasfile return `None` if dialog closed with "cancel".
+            return
+        else:
+            fname = f.name
+            pdf = convertNotesToPdf(self.savedNotes, fname)
+            f.close()
+
     def bindToSaveSlide(self, event):
-        self.savedNotes.append((self.slide, self.notes))
-        print("Saved")
+        self.saveSlide()
 
     def saveSlide(self):
-        self.savedNotes.append((self.slide, self.notes))
+        self.savedNotes.append((self.slide, self.text_wid.get("1.0",tk.END)))
+        self.text_wid.delete(1.0, tk.END)
+        self.slide = None
+        self.notes = ""
         print("Saved")
 
     def startRecord(self):
