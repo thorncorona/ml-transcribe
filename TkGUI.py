@@ -7,6 +7,7 @@ from queue import *
 from GoogleSpeechStream import *
 from ImageProcessor import *
 import imutils
+import time
 
 # Audio recording parameters
 RATE = 16000
@@ -21,16 +22,20 @@ class GuiApp(object):
         self.slide = None
         self.notes = ""
         self.savedNotes = []
+        self.STARTED = False
 
-        # self.root.resizable(width = False, height = False)
+        #First we set the title of the entire frame
+        self.root.title("AutoDoc")
 
         #### first create GUI component holders : PaneWindow
+
         # 1. create a left right split pane
         self.leftRightSplitPane = tk.PanedWindow()
         self.leftRightSplitPane.pack(fill="both", expand="yes")
 
         # 2.  create a top bottom split pane
         self.topBottomSplitPane = tk.PanedWindow(orient=tk.VERTICAL)
+
         # 3.  add the created tb split pane as a component of the above lr split pane
         self.leftRightSplitPane.add(self.topBottomSplitPane)
 
@@ -43,9 +48,9 @@ class GuiApp(object):
         self.topBottomSplitPane.add(self.imagebox)
 
         # 2. add a textbox as the bottom (second) component of the above tb split pa
-        self.startButton = tk.Button (self.root, bg="green", fg="black", text="START", command = self.startRecord)
-        self.stopButton = tk.Button (self.root, bg = "red", fg = "black", text = "STOP", command = self.stopRecord)
-        self.screenShot = tk.Button (self.root, bg = "blue", fg = "white", text = "SCREENSHOT", command = self.saveSlide)
+        self.startButton = tk.Button(self.root, bg="green", fg="black", text="START", command=self.startRecord)
+        self.stopButton = tk.Button(self.root, bg="red", fg="black", text="STOP", command=self.stopRecord)
+        self.screenShot = tk.Button(self.root, bg="blue", fg="white", text="SCREENSHOT", command=self.saveSlide)
         self.topBottomSplitPane.add(self.startButton)
         self.topBottomSplitPane.add(self.stopButton)
         self.topBottomSplitPane.add(self.screenShot)
@@ -60,9 +65,10 @@ class GuiApp(object):
     def check_speech_queue_poll(self, speechQueue):
         try:
             queue_item = speechQueue.get(0)
-            self.notes += queue_item
 
-            self.text_wid.insert('end', queue_item)
+            if self.STARTED is True:
+                self.notes += queue_item
+                self.text_wid.insert('end', queue_item)
         except Empty:
             pass
         finally:
@@ -98,10 +104,14 @@ class GuiApp(object):
     def saveSlide(self):
         self.savedNotes.append((self.slide, self.notes))
         print("Saved")
+
     def startRecord(self):
         print("Started recording")
+        self.STARTED = True
+
     def stopRecord(self):
         print("Stopped recording")
+        self.STARTED = False
 
 
 def listen_print_loop(responses, speechQueue):
@@ -166,24 +176,23 @@ def streamAudio(client, config, streaming_config, q):
 
 def listen(speechQueue):
     pass
-    # language_code = 'en-US'  # a BCP-47 language tag
-    #
-    # client = speech.SpeechClient()
-    # config = types.RecognitionConfig(
-    #     encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-    #     sample_rate_hertz=RATE,
-    #     language_code=language_code)
-    # streaming_config = types.StreamingRecognitionConfig(
-    #     config=config,
-    #     interim_results=True)
-    #
-    # while True:
-    #     try:
-    #         print("restarting")
-    #         streamAudio(client, config, streaming_config, speechQueue)
-    #     except:
-    #         print("error occured ")
-    #         pass
+    language_code = 'en-US'  # a BCP-47 language tag
+
+    client = speech.SpeechClient()
+    config = types.RecognitionConfig(
+        encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=RATE,
+        language_code=language_code)
+    streaming_config = types.StreamingRecognitionConfig(
+        config=config,
+        interim_results=True)
+
+    while True:
+        try:
+            print("restarting")
+            streamAudio(client, config, streaming_config, speechQueue)
+        except:
+            pass
 
 
 def processImages(imageQueue):
@@ -206,16 +215,16 @@ def main():
 
     gui = GuiApp(speechQueue, imageQueue)
 
-    t1 = multiprocessing.Process(target=processImages, args=(imageQueue,))
-    # t2 = multiprocessing.Process(target=listen, args=(q2,))
+    videoThread = multiprocessing.Process(target=processImages, args=(imageQueue,))
+    transcribeThread = multiprocessing.Process(target=listen, args=(speechQueue,))
 
-    t1.start()
-    # t2.start()
+    videoThread.start()
+    transcribeThread.start()
 
     gui.root.mainloop()
 
-    t1.terminate()
-    # t2.terminate()
+    videoThread.join()
+    transcribeThread.join()
 
 
 if __name__ == '__main__':
