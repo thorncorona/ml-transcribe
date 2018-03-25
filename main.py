@@ -18,7 +18,7 @@ import copy
 import numpy as np
 from matplotlib import pyplot as plt
 
-FPS = 3
+FPS = 15
 cap = cv2.VideoCapture(1)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1366)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 768)
@@ -47,8 +47,8 @@ while True:
 
     screenCnt = None
     screenRawCnt = None
-    prev_warped_sm = None
-    warped_sm = None
+    prev_warped = None
+    warped = None
     # loop over the contours
     for c in cnts:
         # approximate the contour
@@ -98,20 +98,32 @@ while True:
 
         warped = transform.four_point_transform(image, screenCnt.reshape(4, 2))
 
-        warped_sm = imutils.resize(warped, height=768)
-        cv2.imshow("Scanned", warped_sm)
-
+        cv2.imshow("Warped", warped)
+        # compare blurred images, if difference > threshold then take pic
         # if warped.shape[0] > 0 and warped.shape[1] > 0:
         #     resize_w = 250
         #     resize_dim = (resize_w, int(warped.shape[0] * (resize_w * 1.0 / warped.shape[1])))
         #     warped_resize = cv2.resize(warped, resize_dim, interpolation=cv2.INTER_AREA)
         #
-        #     blurred = cv2.GaussianBlur(warped_resize, (55, 55), 0)
-        #     blurred = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-        #     cv2.imshow("Blurred", blurred)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        #     warped = warped_resize
+        #     # blurred = cv2.GaussianBlur(warped_resize, (55, 55), 0)
+        #     # cv2.imshow("Blurred", blurred)
+        #
+        #     if prev_warped is None:
+        #         prev_warped = warped
+        #
+        #     warped = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
+        #     warped_hist = cv2.calcHist([warped], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+        #     warped_hist = cv2.normalize(warped_hist, None).flatten()
+        #
+        #     prev_warped_hist = cv2.calcHist([prev_warped], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+        #     prev_warped_hist = cv2.normalize(prev_warped_hist, None).flatten()
+        #
+        #     print(cv2.compareHist(warped_hist, prev_warped_hist, cv2.HISTCMP_CHISQR))
+        #
+        #     prev_warped = warped
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 # When everything done, release the capture
 cap.release()
