@@ -1,12 +1,15 @@
 import tkinter as tk
+
 from PIL import Image, ImageTk
+import imutils
+
+import pdfkit
 
 import multiprocessing
 from queue import *
 
 from GoogleSpeechStream import *
 from ImageProcessor import *
-import imutils
 
 # Audio recording parameters
 RATE = 16000
@@ -87,8 +90,21 @@ class GuiApp(object):
         finally:
             self.root.after(100, self.check_image_queue_poll, imageQueue)
 
+    def file_save():
+        f = tk.filedialog.asksaveasfile(mode='w', defaultextension=".pdf")
+        if f is None:  # asksaveasfile return `None` if dialog closed with "cancel".
+            return
+        else:
+            name = f.name
+            f.close()
+
+
+
     def bindToSaveSlide(self, event):
         self.savedNotes.append((self.slide, self.notes))
+
+        self.slide = None
+        self.notes = ""
         print("Saved")
 
 
@@ -182,7 +198,6 @@ def processImages(imageQueue):
             img_proc.capture_next_frame()
             imageQueue.put((img_proc.get_warped_image(),
                             img_proc.get_contoured_image()))
-
 
 def main():
     # Queue which will be used for storing Data
