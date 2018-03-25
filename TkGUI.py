@@ -1,19 +1,12 @@
 import tkinter as tk
-import imageio
 from PIL import Image, ImageTk
 
 import multiprocessing
 from queue import *
-import time
-
-import pyaudio
-from array import array
-from google.cloud import speech
-from google.cloud.speech import enums
-from google.cloud.speech import types
 
 from GoogleSpeechStream import *
 from ImageProcessor import *
+import imutils
 
 # Audio recording parameters
 RATE = 16000
@@ -21,8 +14,13 @@ CHUNK = int(RATE / 10)  # 100ms
 
 
 class GuiApp(object):
-    def __init__(self, textQueue, imageQueue, master=None):
-        self.root = master
+    def __init__(self, textQueue, imageQueue):
+        self.root = tk.Tk()
+        self.root.bind('<space>', self.bindToSaveSlide)
+
+        self.slide = None
+        self.notes = ""
+        self.savedNotes = []
 
         # self.root.resizable(width = False, height = False)
 
@@ -39,10 +37,10 @@ class GuiApp(object):
         #### then create and add the GUI components in the PaneWindow
         # 1. add the image holder GUI component
         img = ImageTk.PhotoImage(Image.open("PlaceHolderImage.jpg"))
-        imagebox = tk.Label(self.root, image=img)
-        imagebox.pack(side="top", fill="both", expand="yes")
+        self.imagebox = tk.Label(self.root, image=img, height=500)
+        self.imagebox.pack(side="top", fill="both", expand="yes")
         # and add the image holder  as the top (first) component of tb split pane
-        self.topBottomSplitPane.add(imagebox)
+        self.topBottomSplitPane.add(self.imagebox)
 
         # 2. add a textbox as the bottom (second) component of the above tb split pane
         self.text_bottomPlaceHolder = tk.Label(self.topBottomSplitPane, text="BOTTOM")
@@ -52,23 +50,23 @@ class GuiApp(object):
         self.text_wid = tk.Text(self.leftRightSplitPane)
         self.leftRightSplitPane.add(self.text_wid)
 
-        self.root.after(100, self.checkSpeechQueuePoll, textQueue)
-        self.root.after(50, self.checkImageQueuePoll, imageQueue)
+        self.root.after(100, self.check_speech_queue_poll, textQueue)
+        self.root.after(50, self.check_image_queue_poll, imageQueue)
 
-        self.root.mainloop()
-
-    def checkSpeechQueuePoll(self, c_queue):
+    def check_speech_queue_poll(self, speechQueue):
         try:
-            queue_item = c_queue.get(0)
+            queue_item = speechQueue.get(0)
+            self.notes += queue_item
+
             self.text_wid.insert('end', queue_item)
         except Empty:
             pass
         finally:
-            self.root.after(100, self.checkSpeechQueuePoll, c_queue)
+            self.root.after(100, self.check_speech_queue_poll, speechQueue)
 
-    def checkImageQueuePoll(self, c_queue):
+    def check_image_queue_poll(self, imageQueue):
         try:
-            queue_item = c_queue.get(0)
+            queue_item = imageQueue.get()
 
             if queue_item is not None:
                 warped_image, contoured_image = queue_item
@@ -77,20 +75,24 @@ class GuiApp(object):
                     return
 
                 self.slide = warped_image
-                stream_img = warped_image
 
-                stream_img = imutils.resize(warped_image, height=768)
+                stream_img = imutils.resize(warped_image, height=self.imagebox.winfo_height())
                 stream_img = Image.fromarray(stream_img)
                 stream_img = ImageTk.PhotoImage(stream_img)
 
-                self.imageLabel.configure(image=stream_img)
-                self.imageLabel.image = stream_img # need to prevent garbage collecting
+                self.imagebox.configure(image=stream_img)
+                self.imagebox.image = stream_img  # need to prevent garbage collecting
         except Empty:
             pass
         finally:
-            self.root.after(100, self.checkImageQueuePoll, c_queue)
+            self.root.after(100, self.check_image_queue_poll, imageQueue)
 
-def listen_print_loop(responses, q):
+    def bindToSaveSlide(self, event):
+        self.savedNotes.append((self.slide, self.notes))
+        print("Saved")
+
+
+def listen_print_loop(responses, speechQueue):
     """Iterates through server responses and prints them.
 
     The responses passed is a generator that will block until a response
@@ -134,7 +136,7 @@ def listen_print_loop(responses, q):
             num_chars_printed = len(transcript)
 
         else:
-            q.put(transcript + overwrite_chars)
+            speechQueue.put(transcript + overwrite_chars)
             num_chars_printed = 0
 
 
@@ -150,10 +152,10 @@ def streamAudio(client, config, streaming_config, q):
         listen_print_loop(responses, q)
 
 
-def listen(q):
+def listen(speechQueue):
     pass
     # language_code = 'en-US'  # a BCP-47 language tag
-
+    #
     # client = speech.SpeechClient()
     # config = types.RecognitionConfig(
     #     encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
@@ -166,13 +168,13 @@ def listen(q):
     # while True:
     #     try:
     #         print("restarting")
-    #         streamAudio(client, config, streaming_config, q)
+    #         streamAudio(client, config, streaming_config, speechQueue)
     #     except:
     #         print("error occured ")
     #         pass
 
 
-def processImages(self, imageQueue):
+def processImages(imageQueue):
     img_proc = ImageProcessor(FPS=30, rolling_avg=15)
 
     while True:
@@ -182,23 +184,27 @@ def processImages(self, imageQueue):
                             img_proc.get_contoured_image()))
 
 
-if __name__ == '__main__':
+def main():
     # Queue which will be used for storing Data
-
     imageQueue = multiprocessing.Queue()
-    textQueue = multiprocessing.Queue()
-
     imageQueue.cancel_join_thread()  # or else thread that puts data will not term
-    textQueue.cancel_join_thread()  # or else thread that puts data will not term
 
-    root = tk.Tk()
-    gui = GuiApp(textQueue, imageQueue, master=root)
+    speechQueue = multiprocessing.Queue()
+    speechQueue.cancel_join_thread()  # or else thread that puts data will not term
+
+    gui = GuiApp(speechQueue, imageQueue)
+
     t1 = multiprocessing.Process(target=processImages, args=(imageQueue,))
     # t2 = multiprocessing.Process(target=listen, args=(q2,))
+
     t1.start()
     # t2.start()
 
-    # root.mainloop()
+    gui.root.mainloop()
 
     t1.terminate()
-    # t2.join()
+    # t2.terminate()
+
+
+if __name__ == '__main__':
+    main()
