@@ -1,24 +1,50 @@
 from PIL import Image, ImageTk
+from PyPDF2 import PdfFileMerger, PdfFileReader, PdfFileWriter
 import imutils
 
+import io
 import pdfkit
 import base64
 
 
 def convertNotesToPdf(notesList, fname):
+    merger = PdfFileMerger()
+    output = PdfFileWriter()
+    for i in range(0, len(notesList), 3):
+        html = _setupTable()
+        for image, notes in notesList[i:i + 3 if i + 3 < len(notesList) else len(notesList)]:
+            html += _addTableRow(image, notes)
+        html += _finishTable()
+
+        pdfBytes = pdfkit.from_string(html, False)
+        pdfByteStream = io.BytesIO(pdfBytes)
+        pfr = PdfFileReader(pdfByteStream)
+        output.addPage(pfr.getPage(0))
+
+    outputStream = open(fname, "wb")
+    output.write(outputStream)
+    outputStream.close()
+
+    print("Finished saving PDF")
+
+
+def convertNotesToHtml(notesList, fname):
     html = _setupTable()
     for image, notes in notesList:
         html += _addTableRow(image, notes)
 
     html += _finishTable()
 
-    return pdfkit.from_string(html, fname)
+    with open('test.html', 'w') as f:
+        f.write(html)
 
 
 def _ImageToHTMLBase64Image(image):
-    byteEncoding = Image.toBytes(image, encoder_name='jpg')
-    b64 = base64.b64encode(byteEncoding)
-    return "<img src='data:image/png;base64,{0}'".format(b64)
+    b = io.BytesIO()
+    image.save(b, 'JPEG')
+    image_bytes = b.getvalue()
+    b64 = base64.b64encode(image_bytes)
+    return "<img src='data:image/png;base64,{0}'>".format(str(b64)[2:-1])
 
 
 def _addTableRow(image, notes):
@@ -46,12 +72,16 @@ def _setupTable():
         padding: 8px;
     }
     
+    th {
+        width: 50%;
+    }
+    
     tr:nth-child(even) {
         background-color: #eeeeee;
     }
     
     img {
-        max-width: 1000px;
+        max-width: 500px;
     }
     </style>
     </head>

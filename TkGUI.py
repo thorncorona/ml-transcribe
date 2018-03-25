@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import filedialog as fdialog
 
 from PIL import Image, ImageTk
 import imutils
@@ -39,16 +40,22 @@ class GuiApp(object):
         #### then create and add the GUI components in the PaneWindow
         # 1. add the image holder GUI component
         img = ImageTk.PhotoImage(Image.open("PlaceHolderImage.jpg"))
-        self.imagebox = tk.Label(self.root, image=img, height=500)
+        self.imagebox = tk.Label(self.root, image=img, height=600, width=800)
         self.imagebox.pack(side="top", fill="both", expand="yes")
         # and add the image holder  as the top (first) component of tb split pane
         self.topBottomSplitPane.add(self.imagebox)
 
-        # 2. add a textbox as the bottom (second) component of the above tb split pane
-        self.text_bottomPlaceHolder = tk.Label(self.topBottomSplitPane, text="BOTTOM")
-        self.topBottomSplitPane.add(self.text_bottomPlaceHolder)
+        # 2. add a textbox as the bottom (second) component of the above tb split pa
+        self.startButton = tk.Button(self.root, bg="green", fg="black", text="START", command=self.startRecord)
+        self.stopButton = tk.Button(self.root, bg="red", fg="black", text="STOP", command=self.stopRecord)
+        self.screenShot = tk.Button(self.root, bg="blue", fg="white", text="SCREENSHOT", command=self.saveSlide)
+        self.saveAsPDF = tk.Button(self.root, bg="#ff3330", fg="white", text="Save as PDF", command=self.savePDF)
+        self.topBottomSplitPane.add(self.startButton)
+        self.topBottomSplitPane.add(self.stopButton)
+        self.topBottomSplitPane.add(self.screenShot)
+        self.topBottomSplitPane.add(self.saveAsPDF)
 
-        # 3. add a text box in the created split pane
+        # 4. add a text box in the created split pane
         self.text_wid = tk.Text(self.leftRightSplitPane)
         self.leftRightSplitPane.add(self.text_wid)
 
@@ -76,10 +83,10 @@ class GuiApp(object):
                 if warped_image is None:
                     return
 
-                self.slide = warped_image
-
                 stream_img = imutils.resize(warped_image, height=self.imagebox.winfo_height())
                 stream_img = Image.fromarray(stream_img)
+                self.slide = stream_img
+
                 stream_img = ImageTk.PhotoImage(stream_img)
 
                 self.imagebox.configure(image=stream_img)
@@ -89,8 +96,8 @@ class GuiApp(object):
         finally:
             self.root.after(100, self.check_image_queue_poll, imageQueue)
 
-    def file_save(self):
-        f = tk.filedialog.asksaveasfile(mode='w', defaultextension=".pdf")
+    def savePDF(self):
+        f = fdialog.asksaveasfile(mode='w', defaultextension=".pdf")
         if f is None:  # asksaveasfile return `None` if dialog closed with "cancel".
             return
         else:
@@ -98,14 +105,21 @@ class GuiApp(object):
             pdf = convertNotesToPdf(self.savedNotes, fname)
             f.close()
 
-
-
     def bindToSaveSlide(self, event):
-        self.savedNotes.append((self.slide, self.notes))
+        self.saveSlide()
 
+    def saveSlide(self):
+        self.savedNotes.append((self.slide, self.text_wid.get("1.0",tk.END)))
+        self.text_wid.delete(1.0, tk.END)
         self.slide = None
         self.notes = ""
         print("Saved")
+
+    def startRecord(self):
+        print("Started recording")
+
+    def stopRecord(self):
+        print("Stopped recording")
 
 
 def listen_print_loop(responses, speechQueue):
@@ -198,6 +212,7 @@ def processImages(imageQueue):
             img_proc.capture_next_frame()
             imageQueue.put((img_proc.get_warped_image(),
                             img_proc.get_contoured_image()))
+
 
 def main():
     # Queue which will be used for storing Data
