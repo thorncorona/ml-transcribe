@@ -3,8 +3,6 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import imutils
 
-import pdfkit
-
 import multiprocessing
 from queue import *
 

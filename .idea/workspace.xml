@@ -3,8 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="08c05600-2f71-418e-a9c1-6a22ba97c61e" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/MainApp.py" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/NotesToPdf.py" afterPath="$PROJECT_DIR$/NotesToPdf.py" />
       <change beforePath="$PROJECT_DIR$/TkGUI.py" afterPath="$PROJECT_DIR$/TkGUI.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -26,8 +24,8 @@
       <file leaf-file-name="ImageProcessor.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/ImageProcessor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="716">
-              <caret line="107" column="40" lean-forward="false" selection-start-line="107" selection-start-column="40" selection-end-line="107" selection-end-column="40" />
+            <state relative-caret-position="1175">
+              <caret line="90" column="28" lean-forward="false" selection-start-line="90" selection-start-column="28" selection-end-line="90" selection-end-column="28" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
               </folding>
@@ -35,11 +33,31 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="machine-learning-8659a5dc7d91.json" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/machine-learning-8659a5dc7d91.json">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="GoogleSpeechStream.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/GoogleSpeechStream.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="TkGUI.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/TkGUI.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="700">
-              <caret line="91" column="33" lean-forward="false" selection-start-line="91" selection-start-column="33" selection-end-line="91" selection-end-column="33" />
+            <state relative-caret-position="550">
+              <caret line="22" column="25" lean-forward="true" selection-start-line="22" selection-start-column="25" selection-end-line="22" selection-end-column="25" />
               <folding>
                 <element signature="e#0#20#0" expanded="true" />
               </folding>
@@ -50,12 +68,19 @@
       <file leaf-file-name="NotesToPdf.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/NotesToPdf.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="675">
-              <caret line="54" column="5" lean-forward="false" selection-start-line="54" selection-start-column="5" selection-end-line="54" selection-end-column="5" />
+            <state relative-caret-position="400">
+              <caret line="16" column="0" lean-forward="true" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
               <folding>
                 <element signature="e#0#30#0" expanded="true" />
               </folding>
             </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="PlaceHolderImage.jpg" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/PlaceHolderImage.jpg">
+          <provider selected="true" editor-type-id="images">
+            <state />
           </provider>
         </entry>
       </file>
@@ -107,8 +132,8 @@
         <option value="$PROJECT_DIR$/TranscriptionApp.py" />
         <option value="$PROJECT_DIR$/ImageProcessor.py" />
         <option value="$PROJECT_DIR$/MainApp.py" />
-        <option value="$PROJECT_DIR$/TkGUI.py" />
         <option value="$PROJECT_DIR$/NotesToPdf.py" />
+        <option value="$PROJECT_DIR$/TkGUI.py" />
       </list>
     </option>
   </component>
@@ -554,25 +579,6 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/MainApp.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="100">
-          <caret line="4" column="16" lean-forward="false" selection-start-line="4" selection-start-column="16" selection-end-line="4" selection-end-column="16" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/GUI.py" />
-    <entry file="file://$PROJECT_DIR$/ImageProcessor.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MainApp.py">
-      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1975">
           <caret line="90" column="27" lean-forward="false" selection-start-line="90" selection-start-column="27" selection-end-line="90" selection-end-column="28" />
           <folding />
@@ -909,26 +915,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ImageProcessor.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="716">
-          <caret line="107" column="40" lean-forward="false" selection-start-line="107" selection-start-column="40" selection-end-line="107" selection-end-column="40" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/TkGUI.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="700">
-          <caret line="91" column="33" lean-forward="false" selection-start-line="91" selection-start-column="33" selection-end-line="91" selection-end-column="33" />
-          <folding>
-            <element signature="e#0#20#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/transform.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="25">
@@ -937,10 +923,51 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/GoogleSpeechStream.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/machine-learning-8659a5dc7d91.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ImageProcessor.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1175">
+          <caret line="90" column="28" lean-forward="false" selection-start-line="90" selection-start-column="28" selection-end-line="90" selection-end-column="28" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/TkGUI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="550">
+          <caret line="22" column="25" lean-forward="true" selection-start-line="22" selection-start-column="25" selection-end-line="22" selection-end-column="25" />
+          <folding>
+            <element signature="e#0#20#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PlaceHolderImage.jpg">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/NotesToPdf.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="675">
-          <caret line="54" column="5" lean-forward="false" selection-start-line="54" selection-start-column="5" selection-end-line="54" selection-end-column="5" />
+        <state relative-caret-position="400">
+          <caret line="16" column="0" lean-forward="true" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
           <folding>
             <element signature="e#0#30#0" expanded="true" />
           </folding>
