@@ -5,6 +5,7 @@ from queue import *
 import time
 from ImageProcessor import ImageProcessor
 from PIL import Image, ImageTk
+import imutils
 
 class GuiApp(object):
     def __init__(self, imageQueue):
@@ -25,6 +26,7 @@ class GuiApp(object):
                     return
 
                 stream_img = warped_image
+                stream_img = imutils.resize(warped_image, height=768)
                 stream_img = Image.fromarray(stream_img)
                 stream_img = ImageTk.PhotoImage(stream_img)
 
@@ -40,9 +42,11 @@ def processImages(imageQueue):
     img_proc = ImageProcessor(FPS=30, rolling_avg=15)
 
     while True:
-        img_proc.capture_next_frame()
-        imageQueue.put((img_proc.get_warped_image(),
-                        img_proc.get_contoured_image()))
+        if imageQueue.empty():
+            img_proc.capture_next_frame()
+            imageQueue.put((img_proc.get_warped_image(),
+                            img_proc.get_contoured_image()))
+
 
 
 if __name__ == '__main__':
@@ -57,4 +61,4 @@ if __name__ == '__main__':
 
     gui.root.mainloop()
 
-    t2.join()
+    t2.terminate()
