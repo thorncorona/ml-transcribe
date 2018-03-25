@@ -42,11 +42,15 @@ class GuiApp(object):
         # and add the image holder  as the top (first) component of tb split pane
         self.topBottomSplitPane.add(self.imagebox)
 
-        # 2. add a textbox as the bottom (second) component of the above tb split pane
-        self.text_bottomPlaceHolder = tk.Label(self.topBottomSplitPane, text="BOTTOM")
-        self.topBottomSplitPane.add(self.text_bottomPlaceHolder)
+        # 2. add a textbox as the bottom (second) component of the above tb split pa
+        self.startButton = tk.Button ( master, bg="green", fg="black", text="START")
+        self.stopButton = tk.Button (master, bg = "red", fg = "black", text = "STOP")
+        self.screenShot = tk.Button (master, bg = "blue", fg = "white", text = "SCREENSHOT")
+        self.topBottomSplitPane.add(self.startButton)
+        self.topBottomSplitPane.add(self.stopButton)
+        self.topBottomSplitPane.add(self.screenShot)
 
-        # 3. add a text box in the created split pane
+        # 4. add a text box in the created split pane
         self.text_wid = tk.Text(self.leftRightSplitPane)
         self.leftRightSplitPane.add(self.text_wid)
 
