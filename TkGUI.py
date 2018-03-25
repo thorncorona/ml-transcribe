@@ -37,15 +37,15 @@ class GuiApp(object):
         #### then create and add the GUI components in the PaneWindow
         # 1. add the image holder GUI component
         img = ImageTk.PhotoImage(Image.open("PlaceHolderImage.jpg"))
-        self.imagebox = tk.Label(self.root, image=img, height=500)
+        self.imagebox = tk.Label(self.root, image=img, height=600, width=800)
         self.imagebox.pack(side="top", fill="both", expand="yes")
         # and add the image holder  as the top (first) component of tb split pane
         self.topBottomSplitPane.add(self.imagebox)
 
         # 2. add a textbox as the bottom (second) component of the above tb split pa
-        self.startButton = tk.Button ( master, bg="green", fg="black", text="START")
-        self.stopButton = tk.Button (master, bg = "red", fg = "black", text = "STOP")
-        self.screenShot = tk.Button (master, bg = "blue", fg = "white", text = "SCREENSHOT")
+        self.startButton = tk.Button (self.root, bg="green", fg="black", text="START", command = self.startRecord)
+        self.stopButton = tk.Button (self.root, bg = "red", fg = "black", text = "STOP", command = self.stopRecord)
+        self.screenShot = tk.Button (self.root, bg = "blue", fg = "white", text = "SCREENSHOT", command = self.saveSlide)
         self.topBottomSplitPane.add(self.startButton)
         self.topBottomSplitPane.add(self.stopButton)
         self.topBottomSplitPane.add(self.screenShot)
@@ -94,6 +94,14 @@ class GuiApp(object):
     def bindToSaveSlide(self, event):
         self.savedNotes.append((self.slide, self.notes))
         print("Saved")
+
+    def saveSlide(self):
+        self.savedNotes.append((self.slide, self.notes))
+        print("Saved")
+    def startRecord(self):
+        print("Started recording")
+    def stopRecord(self):
+        print("Stopped recording")
 
 
 def listen_print_loop(responses, speechQueue):
