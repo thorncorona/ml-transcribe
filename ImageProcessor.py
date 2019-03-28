@@ -23,12 +23,14 @@ class ImageProcessor(object):
     def __init__(self, FPS, rolling_avg, camera_input=0):
         self.FPS = FPS
         self.PRESENTATION_ROLLING_AVG = rolling_avg
+        self.WARP_COORDS_LOCK = False
+        self.warp_coords = None
         self.contoured_image = None
         self.warped_image = None
 
         self.cap = cap = cv2.VideoCapture(camera_input)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1366)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 768)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         cap.set(cv2.CAP_PROP_FPS, FPS)
         w = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -41,11 +43,14 @@ class ImageProcessor(object):
         self.cap.release()
         cv2.destroyAllWindows()
 
-    def capture_next_frame(self):
+    def capture_next_frame(self, lockedFrame):
         ret, image = self.cap.read()
 
         if image is not None:
-            presentation = self.edge_detect_screen(image)
+            if lockedFrame is False:
+                presentation = self.edge_detect_screen(image)
+
+            presentation = self.warpImage(image)
 
             if presentation is not None:
                 self.warped_image, self.contoured_img = presentation
@@ -92,19 +97,21 @@ class ImageProcessor(object):
                                         [[np.median(bRx), np.median(bRy)]],
                                         [[np.median(bLx), np.median(bLy)]]]).astype(int)
 
-                averaged_screen_contours = medianFrame
+                self.warp_coords = medianFrame
                 raw_screen_contours = approx
 
                 if len(self.presentation_rolling_frames) > self.PRESENTATION_ROLLING_AVG:
                     self.presentation_rolling_frames.pop(0)
                 break
 
-        if averaged_screen_contours is not None:
+    def warpImage(self, image):
+        if self.warp_coords is not None:
             contoured_img = copy.copy(image)
-            cv2.drawContours(contoured_img, [averaged_screen_contours], -1, (0, 255, 0), 2)
-            cv2.drawContours(contoured_img, [raw_screen_contours], -1, (0, 0, 255), 2)
 
-            warped = transform.four_point_transform(image, averaged_screen_contours.reshape(4, 2))
+            if self.WARP_COORDS_LOCK is True:
+                cv2.drawContours(contoured_img, [self.warp_coords], -1, (0, 255, 255), 2)
+
+            warped = transform.four_point_transform(image, self.warp_coords.reshape(4, 2))
             return warped, contoured_img
         else:
             return None

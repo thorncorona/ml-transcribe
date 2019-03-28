@@ -1,4 +1,6 @@
 import tkinter as tk
+from tkinter import filedialog as fdialog
+
 from PIL import Image, ImageTk
 
 import multiprocessing
@@ -6,7 +8,9 @@ from queue import *
 
 from GoogleSpeechStream import *
 from ImageProcessor import *
+from NotesToPdf import convertNotesToPdf
 import imutils
+import time
 
 # Audio recording parameters
 RATE = 16000
@@ -14,23 +18,32 @@ CHUNK = int(RATE / 10)  # 100ms
 
 
 class GuiApp(object):
-    def __init__(self, textQueue, imageQueue):
+    def __init__(self, textQueue, imageQueue, imSetQueue):
         self.root = tk.Tk()
-        self.root.bind('<space>', self.bindToSaveSlide)
+        self.root.bind('<F1>', self.bindToSaveSlide)
+        self.root.bind('<F2>', self.bindToLockSlide)
+        self.root.bind('<F3>', self.bindToLockFrame)
 
         self.slide = None
         self.notes = ""
         self.savedNotes = []
+        self.STARTED = False
+        self.lockSlide = False
+        self.lockFrame = False
+        self.imSetQueue = imSetQueue
 
-        # self.root.resizable(width = False, height = False)
+        # First we set the title of the entire frame
+        self.root.title("AutoDoc - (F1) Save notes, (F2) Lock Slide Image, (F3), Lock view")
 
         #### first create GUI component holders : PaneWindow
+
         # 1. create a left right split pane
         self.leftRightSplitPane = tk.PanedWindow()
         self.leftRightSplitPane.pack(fill="both", expand="yes")
 
         # 2.  create a top bottom split pane
         self.topBottomSplitPane = tk.PanedWindow(orient=tk.VERTICAL)
+
         # 3.  add the created tb split pane as a component of the above lr split pane
         self.leftRightSplitPane.add(self.topBottomSplitPane)
 
@@ -43,12 +56,14 @@ class GuiApp(object):
         self.topBottomSplitPane.add(self.imagebox)
 
         # 2. add a textbox as the bottom (second) component of the above tb split pa
-        self.startButton = tk.Button (self.root, bg="green", fg="black", text="START", command = self.startRecord)
-        self.stopButton = tk.Button (self.root, bg = "red", fg = "black", text = "STOP", command = self.stopRecord)
-        self.screenShot = tk.Button (self.root, bg = "blue", fg = "white", text = "SCREENSHOT", command = self.saveSlide)
+        self.startButton = tk.Button(self.root, bg="green", fg="black", text="START", command=self.startRecord)
+        self.stopButton = tk.Button(self.root, bg="red", fg="black", text="STOP", command=self.stopRecord)
+        self.screenShot = tk.Button(self.root, bg="blue", fg="white", text="SCREENSHOT (F1)", command=self.saveSlide)
+        self.saveAsPDF = tk.Button(self.root, bg="#ff3330", fg="white", text="Save as PDF", command=self.savePDF)
         self.topBottomSplitPane.add(self.startButton)
         self.topBottomSplitPane.add(self.stopButton)
         self.topBottomSplitPane.add(self.screenShot)
+        self.topBottomSplitPane.add(self.saveAsPDF)
 
         # 4. add a text box in the created split pane
         self.text_wid = tk.Text(self.leftRightSplitPane)
@@ -60,9 +75,10 @@ class GuiApp(object):
     def check_speech_queue_poll(self, speechQueue):
         try:
             queue_item = speechQueue.get(0)
-            self.notes += queue_item
 
-            self.text_wid.insert('end', queue_item)
+            if self.STARTED is True:
+                self.notes += queue_item
+                self.text_wid.insert('end', queue_item)
         except Empty:
             pass
         finally:
@@ -75,13 +91,13 @@ class GuiApp(object):
             if queue_item is not None:
                 warped_image, contoured_image = queue_item
 
-                if warped_image is None:
+                if warped_image is None or self.imagebox.winfo_height() < 50:
                     return
-
-                self.slide = warped_image
 
                 stream_img = imutils.resize(warped_image, height=self.imagebox.winfo_height())
                 stream_img = Image.fromarray(stream_img)
+                self.slide_raw = stream_img
+
                 stream_img = ImageTk.PhotoImage(stream_img)
 
                 self.imagebox.configure(image=stream_img)
@@ -91,17 +107,52 @@ class GuiApp(object):
         finally:
             self.root.after(100, self.check_image_queue_poll, imageQueue)
 
+    def savePDF(self):
+        f = fdialog.asksaveasfile(mode='w', defaultextension=".pdf")
+        if f is None:  # asksaveasfile return `None` if dialog closed with "cancel".
+            return
+        else:
+            fname = f.name
+            pdf = convertNotesToPdf(self.savedNotes, fname)
+            f.close()
+
     def bindToSaveSlide(self, event):
-        self.savedNotes.append((self.slide, self.notes))
-        print("Saved")
+        self.saveSlide()
 
     def saveSlide(self):
-        self.savedNotes.append((self.slide, self.notes))
+
+        if self.slide is None:
+            self.slide = self.slide_raw
+
+        self.savedNotes.append((self.slide, self.text_wid.get("1.0", tk.END)))
+        self.text_wid.delete(1.0, tk.END)
+        self.slide = None
+        self.notes = ""
         print("Saved")
+
+    def bindToLockSlide(self, event):
+        self.lockSlideToggle()
+
+    def lockSlideToggle(self):
+        self.lockSlide = True
+        self.slide = self.slide_raw
+        print("lock slide: ", self.lockSlide)
+
+    def bindToLockFrame(self, event):
+        self.lockFrameToggle()
+
+    def lockFrameToggle(self):
+        self.lockFrame = not self.lockFrame
+        self.imSetQueue.put(self.lockFrame)
+        print("Lock Frame: ", self.lockFrame)
+
     def startRecord(self):
         print("Started recording")
+        self.STARTED = True
+
     def stopRecord(self):
         print("Stopped recording")
+        self.STARTED = False
 
 
 def listen_print_loop(responses, speechQueue):
@@ -166,32 +217,35 @@ def streamAudio(client, config, streaming_config, q):
 
 def listen(speechQueue):
     pass
-    # language_code = 'en-US'  # a BCP-47 language tag
-    #
-    # client = speech.SpeechClient()
-    # config = types.RecognitionConfig(
-    #     encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-    #     sample_rate_hertz=RATE,
-    #     language_code=language_code)
-    # streaming_config = types.StreamingRecognitionConfig(
-    #     config=config,
-    #     interim_results=True)
-    #
-    # while True:
-    #     try:
-    #         print("restarting")
-    #         streamAudio(client, config, streaming_config, speechQueue)
-    #     except:
-    #         print("error occured ")
-    #         pass
+    language_code = 'en-US'  # a BCP-47 language tag
 
-
-def processImages(imageQueue):
-    img_proc = ImageProcessor(FPS=30, rolling_avg=15)
+    client = speech.SpeechClient()
+    config = types.RecognitionConfig(
+        encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=RATE,
+        language_code=language_code)
+    streaming_config = types.StreamingRecognitionConfig(
+        config=config,
+        interim_results=True)
 
     while True:
+        try:
+            print("restarting")
+            streamAudio(client, config, streaming_config, speechQueue)
+        except:
+            pass
+
+
+def processImages(imageQueue, imSetQueue):
+    img_proc = ImageProcessor(FPS=30, rolling_avg=15)
+    lockFrame = False
+    while True:
+
+        if imSetQueue.empty() is False:
+            lockFrame = imSetQueue.get(0)
+
         if imageQueue.empty():
-            img_proc.capture_next_frame()
+            img_proc.capture_next_frame(lockFrame)
             imageQueue.put((img_proc.get_warped_image(),
                             img_proc.get_contoured_image()))
 
@@ -200,22 +254,24 @@ def main():
     # Queue which will be used for storing Data
     imageQueue = multiprocessing.Queue()
     imageQueue.cancel_join_thread()  # or else thread that puts data will not term
+    imSetQueue = multiprocessing.Queue()
+    imSetQueue.cancel_join_thread()  # or else thread that puts data will not term
 
     speechQueue = multiprocessing.Queue()
     speechQueue.cancel_join_thread()  # or else thread that puts data will not term
 
-    gui = GuiApp(speechQueue, imageQueue)
+    gui = GuiApp(speechQueue, imageQueue, imSetQueue)
 
-    t1 = multiprocessing.Process(target=processImages, args=(imageQueue,))
-    # t2 = multiprocessing.Process(target=listen, args=(q2,))
+    videoThread = multiprocessing.Process(target=processImages, args=(imageQueue, imSetQueue))
+    transcribeThread = multiprocessing.Process(target=listen, args=(speechQueue,))
 
-    t1.start()
-    # t2.start()
+    videoThread.start()
+    transcribeThread.start()
 
     gui.root.mainloop()
 
-    t1.terminate()
-    # t2.terminate()
+    videoThread.join()
+    transcribeThread.join()
 
 
 if __name__ == '__main__':
